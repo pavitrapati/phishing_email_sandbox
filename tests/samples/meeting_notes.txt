@@ -1,0 +1,3 @@
+Notes from the Tuesday sync.
+- Ship the sandbox
+- Review the report schema

@@ -1,0 +1,40 @@
+# Optional PE detonation layer. Built on demand (`make build-wine`) because Wine adds
+# roughly 1.5 GB, and most phishing attachments are documents and scripts, not binaries.
+FROM sbx-worker:latest
+
+USER root
+RUN dpkg --add-architecture i386 \
+ && apt-get update && apt-get install -y --no-install-recommends \
+        wine wine32:i386 wine64 xvfb xdotool gcc-mingw-w64-x86-64 \
+ && rm -rf /var/lib/apt/lists/*
+
+# Patch Wine binaries to hide Wine-specific strings (registry keys, API exports)
+COPY patch_wine.py /tmp/patch_wine.py
+RUN python3 /tmp/patch_wine.py /usr/lib && rm -f /tmp/patch_wine.py
+
+# Cross-compile the stealth shim DLL and the launcher.
+# - fix_ntquery.dll: hooks NtQueryObject & NtSetInformationThread
+# - launcher.exe:    creates the target process suspended, injects fix_ntquery.dll
+#                    via CreateRemoteThread+LoadLibraryA, then resumes execution.
+#                    Wine does NOT support AppInit_DLLs, so explicit injection is required.
+COPY fix_ntquery.c /tmp/fix_ntquery.c
+COPY launcher.c /tmp/launcher.c
+RUN x86_64-w64-mingw32-gcc -shared -o /tmp/powrprof.dll /tmp/fix_ntquery.c -s \
+ && x86_64-w64-mingw32-gcc -o /tmp/launcher.exe /tmp/launcher.c -s \
+ && rm /tmp/fix_ntquery.c /tmp/launcher.c
+
+# Initialise the Wine prefix at build time
+USER analyst
+ENV WINEPREFIX=/home/analyst/.wine WINEDEBUG=-all WINEDLLOVERRIDES=mscoree,mshtml=
+RUN wineboot --init 2>/dev/null || true; wineserver -w || true
+
+# Place the DLL and launcher in the Wine C: drive
+RUN cp /tmp/powrprof.dll "$WINEPREFIX/drive_c/powrprof.dll" \
+ && cp /tmp/launcher.exe "$WINEPREFIX/drive_c/launcher.exe"
+
+# Backup the pre-initialized prefix so it can be restored into the tmpfs at runtime
+USER root
+RUN cp -r "$WINEPREFIX" /opt/wineprefix && chown -R analyst:analyst /opt/wineprefix
+USER analyst
+
+ENTRYPOINT ["python", "/opt/worker/entrypoint.py"]

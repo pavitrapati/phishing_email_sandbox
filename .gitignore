@@ -1,0 +1,13 @@
+data/
+__pycache__/
+*.pyc
+.pytest_cache/
+/tmp/
+venv/
+test*.json
+test*.xls
+.winebuild/
+malware_test_results.md
+malware_samples/
+test_pafish/
+opcde_session.txt

